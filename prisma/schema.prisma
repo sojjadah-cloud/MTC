@@ -1,0 +1,70 @@
+// ---------------------------------------------------------------------------
+// منصة الدعوات الرقمية — الأسبوع العلمي السابع
+// ---------------------------------------------------------------------------
+// المزوّد الافتراضي هو PostgreSQL كما هو مطلوب للإنتاج.
+// للتشغيل المحلي السريع بلا تثبيت قاعدة بيانات:  npm run db:sqlite
+// وللعودة إلى الإنتاج:                           npm run db:postgres
+//
+// ملاحظة: الحقول التي تمثّل حالات (status / channel) مخزّنة كنص وليست enum،
+// لأن SQLite لا يدعم enum في Prisma. القيم المسموحة محروسة بـ Zod في طبقة
+// التطبيق (src/lib/validation.ts) وهي المصدر الوحيد للحقيقة.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Prisma 7: عنوان الاتصال لم يعد يُكتب هنا. عمليات الترحيل تقرأه من
+// prisma.config.ts، وعميل التطبيق يمرّره عبر محوّل التعريف في src/lib/db.ts.
+datasource db {
+  provider = "sqlite"
+}
+
+/// دعوة واحدة لمدعو واحد
+model Invitation {
+  id String @id @default(cuid())
+
+  guestName    String
+  /// الرقم بالصيغة الدولية E.164 — مثال: +96891234567
+  phoneE164    String
+  /// رمز الدولة ISO-3166 alpha-2 — مثال: OM
+  phoneCountry String
+
+  /// DRAFT | QUEUED | SENT | DELIVERED | READ | FAILED | MANUAL_OPENED
+  status String @default("DRAFT")
+  /// MANUAL | CLOUD_API
+  channel String?
+
+  /// معرّف الرسالة من واجهة واتساب — يمنع ازدواج الإرسال
+  waMessageId  String? @unique
+  errorMessage String?
+
+  /// اسم ملف صورة الدعوة المحفوظة على الخادم
+  imageKey String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sentAt    DateTime?
+
+  events DeliveryEvent[]
+
+  @@index([phoneE164])
+  @@index([createdAt])
+  @@index([status])
+}
+
+/// سجل تدقيق لكل تغيّر في حالة الإرسال — مصدره الـ API أو الـ Webhook
+model DeliveryEvent {
+  id           String     @id @default(cuid())
+  invitationId String
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+
+  /// نفس مجموعة قيم Invitation.status
+  status String
+  /// مصدر الحدث: API | WEBHOOK | USER
+  source String
+  detail String?
+
+  createdAt DateTime @default(now())
+
+  @@index([invitationId])
+}

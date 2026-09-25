@@ -1,26 +1,477 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ---------------------------------------------------------------------------
+   منصة الدعوات — الأسبوع العلمي السابع، الكلية العسكرية التقنية
+   واجهة الهاتف أولًا (عرض التصميم الأساسي 390px)، عربية بالكامل واتجاه RTL.
+   الصفحة أهدأ من البطاقة عمدًا: البطاقة هي بؤرة الانتباه.
+   --------------------------------------------------------------------------- */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-brand-navy: #233e7f;
+  --color-brand-purple: #552e87;
+  --color-brand-blue: #37bced;
+  --color-brand-gold: #f2b031;
+
+  --color-ink: #eef3fb;
+  --color-ink-muted: #9fb0cc;
+  --color-surface: #0a1128;
+  --color-surface-raised: #111a38;
+  --color-line: rgba(140, 170, 220, 0.16);
+
+  --font-sans: "Tajawal", "Segoe UI", system-ui, sans-serif;
+
+  /* سلّم مسافات واحد — كل الهوامش في الصفحة من هذه القيم لا من أرقام عشوائية */
+  --space-1: 8px;
+  --space-2: 12px;
+  --space-3: 16px;
+  --space-4: 20px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius-field: 12px;
+  --radius-card: 16px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* خط Tajawal مضمّن محليًا — ثبات المخرجات وعمل بلا إنترنت */
+@font-face {
+  font-family: "Tajawal";
+  src: url("/fonts/Tajawal-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Tajawal";
+  src: url("/fonts/Tajawal-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Tajawal";
+  src: url("/fonts/Tajawal-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Tajawal";
+  src: url("/fonts/Tajawal-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-display: swap;
+}
+
+html,
+body {
+  min-height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(900px 520px at 85% -8%, rgba(85, 46, 135, 0.42), transparent 62%),
+    radial-gradient(700px 460px at 8% 2%, rgba(55, 188, 237, 0.13), transparent 58%),
+    var(--color-surface);
+  background-attachment: fixed;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  /* يمنع تكبير iOS للحقول عند التركيز */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* الأرقام لاتينية واتجاهها من اليسار داخل واجهة عربية */
+.ltr-nums {
+  direction: ltr;
+  unicode-bidi: embed;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------- الترويسة --- */
+
+.site-header {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(18, 34, 84, 0.92), rgba(10, 17, 40, 0.92));
+  backdrop-filter: blur(6px);
+}
+
+/* الشعاران في وسط الترويسة، يفصل بينهما خط رفيع */
+.site-header__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+}
+
+.site-header__divider {
+  width: 1px;
+  height: 34px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(242, 176, 49, 0.55),
+    transparent
+  );
+}
+
+/* زخرفة الدوائر على الطرفين: ارتفاع الترويسة نفسه، وعرضها يتبع نسبتها
+   الأصلية فلا تتمطّط. تتلاشى نحو الوسط كي لا تزاحم الشعارين. */
+.circuit {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: auto;
+  aspect-ratio: 120 / 96;
+  color: var(--color-brand-blue);
+  opacity: 0.3;
+  pointer-events: none;
+}
+.circuit--start {
+  left: 0;
+  -webkit-mask-image: linear-gradient(to right, #000 35%, transparent);
+  mask-image: linear-gradient(to right, #000 35%, transparent);
+}
+.circuit--end {
+  right: 0;
+  transform: scaleX(-1);
+  -webkit-mask-image: linear-gradient(to right, #000 35%, transparent);
+  mask-image: linear-gradient(to right, #000 35%, transparent);
+}
+
+/* على الشاشات الضيّقة تُخفى الزخرفة: مساحتها تزاحم الشعارين بلا فائدة */
+@media (max-width: 359px) {
+  .circuit {
+    display: none;
+  }
+}
+
+/* خط ذهبي رفيع يختم الترويسة — مأخوذ من فواصل التصميم الرسمي */
+.site-header__rule {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(242, 176, 49, 0.55) 25%,
+    rgba(242, 176, 49, 0.55) 75%,
+    transparent
+  );
+}
+
+/* --------------------------------------------------------------- بطاقات --- */
+
+.card {
+  padding: var(--space-4);
+  background: linear-gradient(180deg, rgba(20, 30, 62, 0.9), rgba(13, 20, 44, 0.9));
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  box-shadow: 0 10px 30px -22px rgba(0, 0, 0, 0.85);
+}
+.card__title {
+  margin-bottom: var(--space-4);
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+.field + .field,
+.field--last {
+  margin-top: var(--space-4);
+}
+
+/* ---------------------------------------------------------------- حقول --- */
+
+.field-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-ink);
+  margin-bottom: var(--space-1);
+}
+
+.field-input {
+  width: 100%;
+  min-height: 48px;
+  background: rgba(7, 12, 30, 0.7);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+  padding: var(--space-2) 14px;
+  color: var(--color-ink);
+  /* 16px يمنع تكبير سفاري التلقائي عند التركيز */
+  font-size: 16px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field-input::placeholder {
+  color: rgba(159, 176, 204, 0.42);
+}
+.field-input:focus-visible {
+  outline: none;
+  border-color: var(--color-brand-blue);
+  box-shadow: 0 0 0 3px rgba(55, 188, 237, 0.2);
+}
+.field-input[aria-invalid="true"] {
+  border-color: #f28b8b;
+}
+
+.field-error {
+  margin-top: var(--space-1);
+  font-size: 13px;
+  color: #f7b4b4;
+}
+.field-hint {
+  margin-top: var(--space-1);
+  font-size: 13px;
+  color: var(--color-ink-muted);
+}
+
+/* رمز الدولة والرقم كتلة واحدة. اتجاهها LTR لأن الأرقام تُقرأ من اليسار
+   إلى اليمين، فيظهر «968+» ثم الرقم بترتيبهما الطبيعي. */
+.phone-group {
+  display: flex;
+  align-items: stretch;
+  direction: ltr;
+  background: rgba(7, 12, 30, 0.7);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-field);
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.phone-group:focus-within {
+  border-color: var(--color-brand-blue);
+  box-shadow: 0 0 0 3px rgba(55, 188, 237, 0.2);
+}
+.phone-group[data-invalid="true"] {
+  border-color: #f28b8b;
+}
+
+.phone-dial {
+  display: flex;
+  align-items: center;
+  flex: none;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border-right: 1px solid var(--color-line);
+  color: var(--color-brand-gold);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.phone-number {
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  padding: var(--space-2) 14px;
+  background: transparent;
+  border: none;
+  color: var(--color-ink);
+  font-size: 16px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  /* فارغًا: النص إرشادي عربي فيُقرأ من اليمين */
+  direction: rtl;
+  text-align: right;
+}
+/* وبمجرّد الكتابة يتحوّل إلى اليسار، فالأرقام تُقرأ من اليسار إلى اليمين */
+.phone-number:not(:placeholder-shown) {
+  direction: ltr;
+  text-align: left;
+}
+.phone-number:focus-visible {
+  outline: none;
+}
+.phone-number::placeholder {
+  color: rgba(159, 176, 204, 0.42);
+}
+
+/* -------------------------------------------------------------- معاينة --- */
+
+.preview-frame {
+  position: relative;
+  /* نسبة الملصق بالضبط — لا قصّ ولا مطّ */
+  aspect-ratio: 9 / 16;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+  background: rgba(4, 8, 20, 0.6);
+  box-shadow: 0 16px 40px -28px rgba(0, 0, 0, 0.9);
+}
+.preview-frame canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.preview-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(6, 10, 24, 0.72);
+  font-size: 14px;
+  color: var(--color-ink-muted);
+  backdrop-filter: blur(2px);
+}
+
+/* --------------------------------------------------------------- أزرار --- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 20px;
+  border-radius: var(--radius-field);
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.18s, background 0.18s, transform 0.12s;
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--color-brand-blue);
+  outline-offset: 2px;
+}
+
+.btn-gold {
+  background: var(--color-brand-gold);
+  color: #2a1c02;
+}
+.btn-gold:hover:not(:disabled) {
+  filter: brightness(1.07);
+}
+
+/* الأزرار من ألوان الهوية لا من ألوان المنصات الخارجية:
+   الذهبي للإجراء الأساسي، والأزرق السماوي للثانوي، والبنفسجي للثالث. */
+.btn-blue {
+  background: var(--color-brand-blue);
+  color: #06243a;
+}
+.btn-blue:hover:not(:disabled) {
+  filter: brightness(1.07);
+}
+
+.btn-outline {
+  background: rgba(85, 46, 135, 0.22);
+  border-color: rgba(140, 110, 200, 0.45);
+  color: var(--color-ink);
+}
+.btn-outline:hover:not(:disabled) {
+  background: rgba(85, 46, 135, 0.34);
+}
+
+/* ------------------------------------------------------------- حركات --- */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ------------------------------------------------------------ شاشات --- */
+
+/* من 480px فأعلى يتّسع العمود قليلًا ويبقى واحدًا — لا لوحة معلومات */
+@media (min-width: 480px) {
+  body {
+    font-size: 16px;
+  }
+}
+
+/* ------------------------------------------------------- تخطيط الصفحة --- */
+
+.page {
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+  flex: 1;
+  padding: var(--space-5) var(--space-4) var(--space-6);
+}
+
+.page__intro {
+  margin-bottom: var(--space-5);
+  text-align: center;
+}
+.page__title {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: #fff;
+}
+.page__lede {
+  margin: var(--space-1) auto 0;
+  max-width: 34ch;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--color-ink-muted);
+}
+.page__form {
+  scroll-margin-top: var(--space-3);
+}
+.page__toast {
+  margin-top: var(--space-3);
+  text-align: center;
+  font-size: 14px;
+  color: var(--color-brand-gold);
+}
+
+.preview {
+  margin-top: var(--space-5);
+}
+.preview__head {
+  margin-bottom: var(--space-2);
+  padding-inline: 2px;
+}
+.preview__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+.preview__lede {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--color-ink-muted);
+}
+
+.actions {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
 }

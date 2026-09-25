@@ -1,36 +1,201 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# منصة الدعوات الرقمية | الأسبوع العلمي السابع
 
-## Getting Started
+توليد دعوات شخصية لحضور فعاليات **الأسبوع العلمي السابع** بالكلية العسكرية
+التقنية، وإرسالها إلى المدعوين عبر واتساب.
 
-First, run the development server:
+المستخدم يُدخل اسم الضيف ورقم هاتفه، فيُدرج النظام الاسم على **التصميم الرسمي
+المعتمد** ويعرض الدعوة للمراجعة، ثم يختار المستخدم تنزيلها أو إرسالها.
+
+---
+
+## التشغيل
+
+```bash
+npm install
+```
+
+انسخ ملف البيئة واضبط القيم:
+
+```bash
+cp .env.example .env
+```
+
+جهّز قاعدة البيانات (اختيارية — لتسجيل الدعوات). للتشغيل المحلي السريع:
+
+```bash
+npm run db:sqlite
+```
+
+شغّل التطبيق:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+ثم افتح <http://localhost:3000>.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> الواجهة تعمل بلا قاعدة بيانات وبلا أي إعداد: التوليد والتنزيل والمشاركة
+> عبر واتساب كلّها تجري في المتصفح.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### للإنتاج على PostgreSQL
 
-## Learn More
+```bash
+docker compose up -d
+```
 
-To learn more about Next.js, take a look at the following resources:
+اضبط `DATABASE_URL` على عنوان PostgreSQL في `.env`، ثم:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run db:postgres
+npm run build && npm start
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## أصول الهوية
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+التصميم الرسمي والشعارات في `public/brand/`. لتجهيزها من ملف التصميم المعتمد:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+node scripts/prepare-brand.mjs "<مسار التصميم>"
+```
+
+يقوم السكربت بثلاثة أمور: يعيد قياس التصميم إلى **1080×1920** ويحفظه قالبًا،
+ويقتطع شعار الكلية وشعار الأسبوع العلمي للترويسة، ويطبع ألوان الخلفية حول
+شريط الاسم. لا يعيد تصميم شيء ولا يولّد خلفية.
+
+التفاصيل الكاملة وضبط موضع الاسم في [`public/brand/README.md`](public/brand/README.md).
+
+---
+
+## كيف تُبنى صورة الدعوة
+
+التصميم الرسمي يحمل كل النصوص الثابتة مطبوعة عليه، فلا يرسم النظام فوقه سوى
+**اسم المدعو**.
+
+ولأن التصميم المعتمد يحمل اسمًا نموذجيًا مطبوعًا، يعيد المولّد أولًا بناء شريط
+الاسم: يأخذ صفًّا نظيفًا من أعلى الشريط وآخر من أسفله، ويتدرّج بينهما رأسيًا،
+ويموّه الحافتين الجانبيتين. الخلفية هناك تدرّج أملس فيختفي الاسم القديم بلا أثر.
+
+حدود الشريط مقيسة من التصميم نفسه ومكتوبة في `NAME_BAND`:
+
+| العنصر | الموضع الرأسي |
+|---|---|
+| الفاصل الذهبي | 654 – 655 |
+| شريط الاسم (يُعاد بناؤه) | 664 – 834 |
+| أول سطر من نص الدعوة | 839 |
+
+**لماذا التوليد في المتصفح لا على الخادم؟** لأن محرّك النصوص في المتصفح يطبّق
+تشكيل الحروف العربية (اتصال الحروف) واتجاه النص ثنائي الاتجاه تلقائيًا. مكتبات
+canvas على الخادم تكتب الحروف منفصلة ما لم تُضف طبقة تشكيل يدوية، وهي أكبر
+مصدر لتشوّه النص العربي في هذا النوع من المشاريع.
+
+الصورة المعروضة في المعاينة هي **نفسها** المحفوظة والمرسلة: تُرسم مرة واحدة
+بمقاس 1080×1920 وتُعرض مصغّرة بـ CSS فقط.
+
+الأسماء الطويلة تُصغَّر تلقائيًا ثم تُلفّ على سطرين بحد أقصى، بشرطَي العرض
+والارتفاع معًا — فلا تُقصّ ولا تتجاوز الشريط.
+
+---
+
+## الإرسال عبر واتساب
+
+### الوضع اليدوي — يعمل الآن بلا أي إعداد
+
+زر **فتح واتساب المدعو** يفتح المحادثة برسالة الدعوة جاهزة عبر `wa.me`.
+
+> رابط `wa.me` **لا يرفق الصورة تلقائيًا**. نزّل الصورة وأرفقها بنفسك، أو
+> استخدم زر المشاركة إن كان المتصفح يدعم Web Share للملفات.
+
+فتح المحادثة يُسجَّل بحالة `MANUAL_OPENED` المنفصلة تمامًا عن `SENT`، لأنه
+ليس دليلًا على أن الرسالة أُرسلت.
+
+### الوضع التلقائي — WhatsApp Cloud API
+
+يتفعّل فقط عند ضبط `WHATSAPP_ACCESS_TOKEN` و`WHATSAPP_PHONE_NUMBER_ID`، ويجري
+من الخادم عبر مسار إداري. الواجهة العامة لا تتغيّر ولا تعرض حالة الإعداد: لا
+داعي لأن يرى المستخدم معلومات تشغيلية. وقبل الضبط لا يُحاكى أي إرسال ناجح.
+
+مسار الإرسال: رفع الصورة إلى مخزن وسائط واتساب، ثم إرسالها كرسالة وسائط. وإن
+ضُبط `WHATSAPP_TEMPLATE_NAME` يُرسل القالب المعتمد أولًا — سياسة واتساب تمنع
+بدء محادثة برسالة حرّة خارج نافذة الـ ٢٤ ساعة.
+
+**منع الإرسال المزدوج:** تُحجز الدعوة بتحديث شرطي ذرّي يشترط ألّا تكون حالتها
+ضمن الحالات المقفلة. لو وصل طلبان معًا ينجح واحد فقط في الحجز.
+
+**الحالات:** `DRAFT` ← `QUEUED` ← `SENT` ← `DELIVERED` ← `READ`، و`FAILED` عند
+الفشل. حالتا «سُلّمت» و«قُرئت» يؤكّدهما الـ Webhook وحده، ولا نفترضهما.
+
+### ربط الـ Webhook
+
+العنوان: `POST /api/whatsapp/webhook`
+
+اضبط `WHATSAPP_VERIFY_TOKEN` للتحقق من الاشتراك، و`WHATSAPP_APP_SECRET` للتحقق
+من توقيع Meta. **بلا مفتاح التوقيع تُرفض كل الأحداث** — وإلا أمكن لأي طرف أن
+يزعم أن دعوة سُلّمت.
+
+---
+
+## البنية
+
+```
+src/
+  app/
+    page.tsx                     الصفحة الواحدة
+    api/
+      config                     حالة الخدمات (تشخيصية)
+      invitations                إنشاء الدعوات وقائمتها
+      invitations/[id]/image     حفظ صورة الدعوة واسترجاعها
+      invitations/[id]/send      الإرسال عبر Cloud API
+      invitations/[id]/manual    تسجيل فتح المحادثة يدويًا
+      whatsapp/webhook           تأكيد التسليم والقراءة
+  components/
+    ScienceWeekHeader · GuestForm · InvitationPreview
+    InvitationCanvas · ActionButtons · InvitationGenerator
+  lib/
+    invitation-canvas.ts         توليد الصورة وإعادة بناء شريط الاسم
+    template-config.ts           كل إحداثيات البطاقة والنص الثابت
+    phone.ts                     التحقق من الأرقام وتحويلها إلى E.164
+    validation.ts                مخططات Zod ومجموعات الحالات
+    whatsapp.ts                  عميل Cloud API (خادمي فقط)
+    whatsapp-link.ts             نص الرسالة ورابط wa.me (مشترك)
+    image-store.ts               تخزين الصور خارج public
+    rate-limit.ts · api.ts · db.ts
+prisma/schema.prisma · prisma.config.ts
+scripts/prepare-brand.mjs · scripts/use-db.mjs
+```
+
+---
+
+## لا حسابات ولا لوحة تحكّم
+
+الأداة مهمّتها واحدة: توليد دعوة وإرسالها. لذلك لا يوجد تسجيل دخول ولا لوحة
+متابعة ولا جداول ولا إحصاءات — ولا رسائل تقنية عن حالة الـ API.
+
+المسارات الإدارية (سجل الدعوات، تنزيل الصور المحفوظة، الإرسال التلقائي)
+محميّة برمز `ADMIN_API_TOKEN` في ترويسة `Authorization: Bearer …`، ولا
+تستدعيها الواجهة العامة إطلاقًا.
+
+## الأمان
+
+- المسارات الإدارية محميّة برمز ثابت يُقارَن بزمن ثابت؛ والواجهة العامة لا
+  تكشف أي سجل.
+- التحقق من المدخلات يُعاد على الخادم بنفس مخططات Zod المستخدمة في الواجهة.
+- صور الدعوات تُحفظ **خارج** `public` لأنها تحمل أسماء المدعوين، والوصول إليها
+  يمرّ عبر مسار محميّ بالرمز الإداري.
+- أرقام الهواتف لا تُطبع على البطاقة إطلاقًا.
+- حدّ معدّل على إنشاء الدعوات والإرسال. العدّاد في ذاكرة العملية —
+  للنشر على أكثر من نسخة استبدله بـ Redis (الواجهة نفسها تكفي).
+- المفاتيح في متغيّرات بيئة على الخادم فقط، ولا يوجد مفتاح حقيقي في المستودع.
+
+---
+
+## ملاحظات
+
+- الدعوات وأحداث التسليم ما زالت تُحفظ في قاعدة البيانات عند توفّرها، فإعادة
+  عرض لوحة متابعة لاحقًا لا تحتاج سوى مكوّن عرض يستهلك المسار الإداري.
+- الواجهة **هاتف أولًا**: عمود واحد بعرض تصميم أساسي 390px، ومختبرة على
+  360 / 375 / 390 / 393 / 414 / 430.
+- الواجهة عربية بالكامل بخط **Tajawal** المضمّن محليًا واتجاه RTL.
+- `npm audit` يُبلّغ عن `mysql2` — تبعية داخلية لأدوات Prisma السطرية، غير
+  مستخدمة في وقت التشغيل (المشروع على PostgreSQL/SQLite).

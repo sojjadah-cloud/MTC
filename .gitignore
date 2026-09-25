@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# بيانات التشغيل المحلية
+.data/
+.env
+prisma/dev.db
+prisma/dev.db-journal
+
+# قاعدة البيانات المحلية في جذر المشروع — تحتوي أسماء المدعوين وأرقامهم
+/dev.db
+/dev.db-journal
+!.env.example
