@@ -1,0 +1,64 @@
+# ---------------------------------------------------------------------------
+# مخطّط النشر على Render — منصة دعوات الأسبوع العلمي السابع
+#
+# من لوحة Render: Blueprints ← New Blueprint Instance ← اختر مستودع
+# sojjadah-cloud/MTC. تُقرأ هذه الخطة ويُنشأ ما فيها، ثم يُعاد النشر تلقائيًا
+# مع كل دفعة إلى الفرع main.
+#
+# خدمة واحدة بلا قاعدة بيانات — وهذا مقصود:
+# صفحة الدعوة تُولّد البطاقة وتُنزّلها في متصفّح الزائر بالكامل، فلا تلمس
+# قاعدة البيانات في أي خطوة. إضافة قاعدة مجانية هنا تعني عطلًا بعد انتهاء
+# مدّتها: يفشل الترحيل، فيفشل البناء، فيتوقّف النشر كلّه — مقابل لا شيء
+# تستفيده الصفحة. القاعدة تلزم فقط لمسارات الـ API (السجل والإرسال)، وطريقة
+# تفعيلها في آخر هذا الملف.
+# ---------------------------------------------------------------------------
+
+services:
+  - type: web
+    name: mtc-invitations
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+    autoDeploy: true
+
+    # deploy:migrate يتخطّى نفسه بلا DATABASE_URL، فيبقى البناء ناجحًا بلا
+    # قاعدة، ويُرحّل المخطّط تلقائيًا إن رُبطت قاعدة لاحقًا.
+    buildCommand: npm ci && npm run deploy:migrate && npm run build
+    startCommand: npm run start
+
+    healthCheckPath: /
+
+    envVars:
+      # better-sqlite3 له حزم مبنيّة جاهزة على 22، فلا يُبنى من المصدر.
+      - key: NODE_VERSION
+        value: "22"
+
+      # الخطة المجانية بلا قرص دائم: هذا المجلّد يُمسح مع كل نشر. لا أثر له
+      # على الصفحة العامة — الصورة تُبنى وتُنزَّل في المتصفّح.
+      - key: INVITATION_STORAGE_DIR
+        value: /tmp/invitations
+
+      # يحرس مسارات الـ API الإدارية. Render يولّد قيمة عشوائية ولا تظهر في
+      # المستودع.
+      - key: ADMIN_API_TOKEN
+        generateValue: true
+
+# ---------------------------------------------------------------------------
+# لتفعيل السجل والإرسال عبر واجهة واتساب: أزل التعليق عن الكتلتين التاليتين،
+# وانقلها الأولى إلى قائمة envVars أعلاه.
+#
+#      - key: DATABASE_URL
+#        fromDatabase:
+#          name: mtc-invitations-db
+#          property: connectionString
+#
+# databases:
+#   - name: mtc-invitations-db
+#     plan: free            # تنتهي صلاحيتها بعد ٣٠ يومًا — راجع خطط Render
+#     region: frankfurt
+#
+# ومفاتيح واتساب تُضاف يدويًا من Environment في لوحة الخدمة، لا هنا:
+#   WHATSAPP_ACCESS_TOKEN ، WHATSAPP_PHONE_NUMBER_ID ، WHATSAPP_TEMPLATE_NAME
+#   WHATSAPP_VERIFY_TOKEN ، WHATSAPP_APP_SECRET
+# ---------------------------------------------------------------------------

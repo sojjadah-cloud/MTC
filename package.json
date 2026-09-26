@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "deploy:migrate": "node scripts/deploy-migrate.mjs",
     "lint": "eslint",
     "db:sqlite": "node scripts/use-db.mjs sqlite && prisma generate && prisma db push",
     "db:postgres": "node scripts/use-db.mjs postgres && prisma generate && prisma migrate deploy",
@@ -35,5 +36,8 @@
     "sharp": "^0.35.4",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=20.9"
   }
 }
